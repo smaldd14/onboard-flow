@@ -5,10 +5,13 @@ A Spring Boot application for managing customer onboarding workflows with automa
 ## Features
 
 - Customer onboarding workflow management
+- Database-backed email template management with full CRUD operations
+- Dynamic email sequence creation and management
+- Template preview and validation system
 - Automated email sequences with AWS SES
 - Temporal.io workflow orchestration
 - PostgreSQL database with JPA/Hibernate
-- REST API for onboarding operations
+- Comprehensive REST APIs for onboarding, templates, and sequences
 - Email event tracking and analytics
 - User action tracking
 
@@ -98,6 +101,32 @@ The application will start on http://localhost:8080
 - `POST /api/onboarding/resume/{customerId}` - Resume onboarding
 - `POST /api/onboarding/complete/{customerId}` - Complete onboarding
 
+### Email Template Management
+
+- `POST /api/v1/templates` - Create new email template
+- `GET /api/v1/templates` - List all email templates
+- `GET /api/v1/templates/{id}` - Get template by ID
+- `PUT /api/v1/templates/{id}` - Update email template
+- `DELETE /api/v1/templates/{id}` - Delete email template
+- `POST /api/v1/templates/{id}/activate` - Activate template
+- `POST /api/v1/templates/{id}/deactivate` - Deactivate template
+- `POST /api/v1/templates/{id}/preview` - Preview rendered template
+
+### Email Sequence Management
+
+- `POST /api/v1/sequences` - Create new email sequence
+- `GET /api/v1/sequences` - List all email sequences
+- `GET /api/v1/sequences/{id}` - Get sequence by ID
+- `PUT /api/v1/sequences/{id}` - Update email sequence
+- `DELETE /api/v1/sequences/{id}` - Delete email sequence
+- `POST /api/v1/sequences/{id}/activate` - Activate sequence
+- `POST /api/v1/sequences/{id}/deactivate` - Deactivate sequence
+- `POST /api/v1/sequences/{id}/validate` - Validate sequence configuration
+- `GET /api/v1/sequences/{id}/steps` - Get sequence steps
+- `POST /api/v1/sequences/{id}/steps` - Add step to sequence
+- `PUT /api/v1/sequences/{id}/steps/{order}` - Update sequence step
+- `DELETE /api/v1/sequences/{id}/steps/{order}` - Delete sequence step
+
 ### Example: Start Onboarding
 
 ```bash
@@ -111,6 +140,46 @@ curl -X POST http://localhost:8080/api/onboarding/start \
       "companyName": "Example Corp"
     },
     "sequenceId": "default-sequence-slug"
+  }'
+```
+
+### Example: Create Email Template
+
+```bash
+curl -X POST http://localhost:8080/api/v1/templates \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "welcome-v2",
+    "name": "Welcome Email v2",
+    "subject": "Welcome to {{companyName}}, {{firstName}}!",
+    "htmlBody": "<html><body><h1>Welcome {{firstName}}!</h1><p>We are excited to have you join us...</p></body></html>",
+    "textBody": "Welcome {{firstName}}!\n\nWe are excited to have you join..."
+  }'
+```
+
+### Example: Create Email Sequence
+
+```bash
+curl -X POST http://localhost:8080/api/v1/sequences \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "SaaS Trial Sequence",
+    "description": "14-day trial onboarding sequence",
+    "maxDurationDays": 21,
+    "steps": [
+      {
+        "stepOrder": 1,
+        "emailTemplateId": "trial-welcome",
+        "delayFromStartHours": 0,
+        "sendConditions": []
+      },
+      {
+        "stepOrder": 2,
+        "emailTemplateId": "trial-reminder",
+        "delayFromStartHours": 72,
+        "sendConditions": ["user_not_active"]
+      }
+    ]
   }'
 ```
 
@@ -132,6 +201,7 @@ src/main/java/com/hooswhere/onboardFlow/
 
 The application uses the following main tables:
 - `customers` - Customer information
+- `email_templates` - Email template storage with HTML/text content
 - `email_sequences` - Email sequence configurations
 - `email_steps` - Individual steps in email sequences
 - `onboarding_progress` - Tracking onboarding status
