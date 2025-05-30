@@ -19,7 +19,7 @@ public class CustomerEntity {
     /*
     create entity from this table
     CREATE TABLE IF NOT EXISTS customers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) NOT NULL UNIQUE,
     first_name VARCHAR(100),
     last_name VARCHAR(100),

@@ -23,9 +23,9 @@ public class OnboardingProgressEntity {
     /*
     Create entity from this table schema:
     CREATE TABLE IF NOT EXISTS onboarding_progress (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
-    sequence_id UUID REFERENCES email_sequences(id),
+    slug UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    customer_id UUID REFERENCES customers(slug) ON DELETE CASCADE,
+    sequence_id UUID REFERENCES email_sequences(slug),
     workflow_id VARCHAR(255) UNIQUE NOT NULL,
     status VARCHAR(50) NOT NULL, -- IN_PROGRESS, PAUSED, COMPLETED, CONVERTED, CANCELLED
     current_step INTEGER DEFAULT 0,

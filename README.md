@@ -110,7 +110,7 @@ curl -X POST http://localhost:8080/api/onboarding/start \
       "lastName": "Doe",
       "companyName": "Example Corp"
     },
-    "sequenceId": "default-sequence-id"
+    "sequenceId": "default-sequence-slug"
   }'
 ```
 

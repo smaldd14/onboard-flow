@@ -1,7 +1,9 @@
 package com.hooswhere.onboardFlow.temporal;
 
+import com.hooswhere.onboardFlow.models.EmailSequenceConfig;
 import com.hooswhere.onboardFlow.models.EmailTemplate;
 import com.hooswhere.onboardFlow.models.EmailTemplateContext;
+import com.hooswhere.onboardFlow.service.EmailSequenceService;
 import com.hooswhere.onboardFlow.service.EmailService;
 import com.hooswhere.onboardFlow.service.EmailTemplateService;
 import io.temporal.spring.boot.ActivityImpl;
@@ -10,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @ActivityImpl(taskQueues = OnboardingWorkflowImpl.TASK_QUEUE)
@@ -18,10 +21,12 @@ public class EmailActivitiesImpl implements EmailActivities {
     
     private final EmailService emailService;
     private final EmailTemplateService emailTemplateService;
+    private final EmailSequenceService emailSequenceService;
     
-    public EmailActivitiesImpl(EmailService emailService, EmailTemplateService emailTemplateService) {
+    public EmailActivitiesImpl(EmailService emailService, EmailTemplateService emailTemplateService, EmailSequenceService emailSequenceService) {
         this.emailService = emailService;
         this.emailTemplateService = emailTemplateService;
+        this.emailSequenceService = emailSequenceService;
     }
     
     @Override
@@ -147,5 +152,18 @@ public class EmailActivitiesImpl implements EmailActivities {
         // For now, just log it
         
         // TODO: Implement actual progress update to onboarding_progress table
+    }
+    
+    @Override
+    public EmailSequenceConfig loadEmailSequence(UUID sequenceId) {
+        logger.debug("Loading email sequence: {}", sequenceId);
+        
+        try {
+            return emailSequenceService.getSequenceById(sequenceId)
+                    .orElse(null);
+        } catch (Exception e) {
+            logger.error("Failed to load email sequence: {}", sequenceId, e);
+            throw e;
+        }
     }
 }

@@ -77,35 +77,38 @@ public class OnboardingWorkflowImpl implements OnboardingWorkflow {
     }
     
     private void executeEmailSequence() {
-        // Load email sequence configuration
-        // For now, we'll use a hardcoded sequence name
-        // In Phase 5, this will come from the workflow input
-        String sequenceName = "default-saas-sequence";
+        logger.info("Executing email sequence: {} for customer: {}", input.sequenceId(), input.customer().email());
         
-        logger.info("Executing dynamic email sequence: {} for customer: {}", sequenceName, input.customer().email());
-        
-        // In a real implementation, we would load the sequence here
-        // For now, simulate steps dynamically based on sequence configuration
-        executeStep(1, "welcome", Duration.ZERO, java.util.List.of());
-        
-        if (shouldContinue()) {
-            executeStep(2, "getting-started", Duration.ofDays(1), java.util.List.of("user_not_active"));
-        }
-        
-        if (shouldContinue()) {
-            executeStep(3, "feature-highlight", Duration.ofDays(3), java.util.List.of("user_not_active", "email_not_opened"));
-        }
-        
-        if (shouldContinue()) {
-            executeStep(4, "check-in", Duration.ofDays(7), java.util.List.of("user_not_converted"));
-        }
-        
-        if (shouldContinue()) {
-            executeStep(5, "conversion-push", Duration.ofDays(14), java.util.List.of("user_not_converted"));
-        }
-        
-        if (shouldContinue()) {
-            executeStep(6, "final-engagement", Duration.ofDays(30), java.util.List.of("user_not_converted"));
+        try {
+            // Load the email sequence from database using the activity
+            var sequenceConfig = emailActivities.loadEmailSequence(input.sequenceId());
+            
+            if (sequenceConfig == null) {
+                logger.error("Email sequence not found: {}", input.sequenceId());
+                status = OnboardingStatus.CANCELLED;
+                updateProgress();
+                return;
+            }
+            
+            // Execute each step in the sequence
+            for (var step : sequenceConfig.steps()) {
+                if (!shouldContinue()) {
+                    break;
+                }
+                
+                executeStep(
+                    step.stepOrder(),
+                    step.templateSlug(),
+                    step.delayFromStart(),
+                    step.sendConditions()
+                );
+            }
+            
+        } catch (Exception e) {
+            logger.error("Failed to load email sequence: {}", input.sequenceId(), e);
+            status = OnboardingStatus.CANCELLED;
+            updateProgress();
+            throw e;
         }
     }
     

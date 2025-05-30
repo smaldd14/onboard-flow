@@ -4,9 +4,11 @@ import com.hooswhere.onboardFlow.OnboardingAlreadyStartedException;
 import com.hooswhere.onboardFlow.OnboardingStatus;
 import com.hooswhere.onboardFlow.entity.CustomerEntity;
 import com.hooswhere.onboardFlow.entity.OnboardingProgressEntity;
+import com.hooswhere.onboardFlow.models.EmailSequenceConfig;
 import com.hooswhere.onboardFlow.models.StartOnboardingRequest;
 import com.hooswhere.onboardFlow.repository.OnboardingProgressRepository;
 import com.hooswhere.onboardFlow.service.CustomerService;
+import com.hooswhere.onboardFlow.service.EmailSequenceService;
 import com.hooswhere.onboardFlow.service.OnboardingService;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
@@ -24,13 +26,16 @@ public class OnboardingStarterImpl implements OnboardingStarter {
     private final WorkflowClient client;
     private final OnboardingService onboardingService;
     private final CustomerService customerService;
+    private final EmailSequenceService emailSequenceService;
     private final OnboardingProgressRepository onboardingProgressRepository;
 
     public OnboardingStarterImpl(WorkflowClient client, OnboardingService onboardingService,
-                                 CustomerService customerService, OnboardingProgressRepository onboardingProgressRepository) {
+                                 CustomerService customerService, EmailSequenceService emailSequenceService,
+                                 OnboardingProgressRepository onboardingProgressRepository) {
         this.client = client;
         this.onboardingService = onboardingService;
         this.customerService = customerService;
+        this.emailSequenceService = emailSequenceService;
         this.onboardingProgressRepository = onboardingProgressRepository;
     }
     @Override
@@ -47,17 +52,30 @@ public class OnboardingStarterImpl implements OnboardingStarter {
         // Generate unique workflow ID
         String workflowId = "onboarding-" + customer.getId() + "-" + System.currentTimeMillis();
         
-        // For now, use a hardcoded sequence ID (will be enhanced in Phase 5)
-        UUID sequenceId = UUID.fromString("75addbd2-ce82-4cd9-a656-ae2f0fba3618"); // This will come from email sequence service later
+        // Determine which sequence to use based on the request.sequenceId
+        EmailSequenceConfig sequence;
+        try {
+            UUID requestedSequenceId = UUID.fromString(request.sequenceId());
+            sequence = emailSequenceService.getSequenceById(requestedSequenceId)
+                    .orElseThrow(() -> new IllegalArgumentException("Email sequence not found: " + request.sequenceId()));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid or missing sequenceId: " + request.sequenceId(), e);
+        }
+        
+        if (!sequence.isActive()) {
+            throw new IllegalArgumentException("Email sequence is not active: " + sequence.name());
+        }
+        
+        LOG.info("Using email sequence: {} for customer: {}", sequence.name(), customer.getEmail());
         
         // Create onboarding progress record
-        OnboardingProgressEntity progress = createOnboardingProgress(customer, sequenceId, workflowId);
+        OnboardingProgressEntity progress = createOnboardingProgress(customer, sequence.id(), workflowId);
         onboardingProgressRepository.save(progress);
         
         // Create workflow input
         OnboardingWorkflowInput workflowInput = OnboardingWorkflowInput.create(
             request.customer(),
-            sequenceId,
+            sequence.id(),
             workflowId,
             request.metadata()
         );

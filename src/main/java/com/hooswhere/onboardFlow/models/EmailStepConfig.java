@@ -8,21 +8,42 @@ public record EmailStepConfig(
     UUID id,
     UUID sequenceId,
     int stepOrder,
-    String emailTemplateId,
+    UUID templateId,
+    String templateSlug,
     Duration delayFromStart,
     List<String> sendConditions
 ) {
     public static EmailStepConfig create(
             UUID sequenceId,
             int stepOrder,
-            String emailTemplateId,
+            UUID templateId,
+            String templateSlug,
             Duration delayFromStart,
             List<String> sendConditions) {
         return new EmailStepConfig(
                 UUID.randomUUID(),
                 sequenceId,
                 stepOrder,
-                emailTemplateId,
+                templateId,
+                templateSlug,
+                delayFromStart,
+                sendConditions != null ? sendConditions : List.of()
+        );
+    }
+    
+    // Convenience method for creating with just slug (UUID will be resolved later)
+    public static EmailStepConfig createWithSlug(
+            UUID sequenceId,
+            int stepOrder,
+            String templateSlug,
+            Duration delayFromStart,
+            List<String> sendConditions) {
+        return new EmailStepConfig(
+                UUID.randomUUID(),
+                sequenceId,
+                stepOrder,
+                null, // Will be resolved when converting to entity
+                templateSlug,
                 delayFromStart,
                 sendConditions != null ? sendConditions : List.of()
         );
@@ -36,11 +57,11 @@ public record EmailStepConfig(
         return sendConditions != null && sendConditions.contains(condition);
     }
     
-    public long getDelayHours() {
+    public long delayInHours() {
         return delayFromStart.toHours();
     }
     
-    public long getDelayMinutes() {
+    public long delayInMinutes() {
         return delayFromStart.toMinutes();
     }
 }

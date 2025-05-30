@@ -1,7 +1,10 @@
 package com.hooswhere.onboardFlow.temporal;
 
+import com.hooswhere.onboardFlow.models.EmailSequenceConfig;
 import io.temporal.activity.ActivityInterface;
 import io.temporal.activity.ActivityMethod;
+
+import java.util.UUID;
 
 @ActivityInterface
 public interface EmailActivities {
@@ -17,4 +20,7 @@ public interface EmailActivities {
     
     @ActivityMethod
     void updateOnboardingProgress(ProgressUpdateInput input);
+    
+    @ActivityMethod
+    EmailSequenceConfig loadEmailSequence(UUID sequenceId);
 }

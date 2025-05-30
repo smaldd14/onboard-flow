@@ -25,7 +25,7 @@ public record EmailSequenceConfig(
             .orElse(null);
     }
     
-    public int getTotalSteps() {
+    public int totalSteps() {
         return steps.size();
     }
     
