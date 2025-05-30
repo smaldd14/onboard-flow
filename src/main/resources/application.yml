@@ -1,0 +1,25 @@
+spring.application.name: onboard-flow
+spring.datasource.url: jdbc:postgresql://localhost:5432/onboard_flow
+spring.datasource.username: postgres
+spring.datasource.password: postgres
+#spring.datasource.driver-class-name: org.postgresql.Driver
+spring.jpa.hibernate.ddl-auto: update
+spring.sql.init.mode: always
+
+spring:
+    temporal:
+        namespace: onboard
+        connection:
+            target: local
+        start-workers: true
+        workersAutoDiscovery:
+            packages: com.hooswhere.onboardFlow
+
+# AWS SES Configuration
+aws:
+    ses:
+        region: ${AWS_REGION:us-east-1}
+        access-key: ${AWS_ACCESS_KEY_ID:}
+        secret-key: ${AWS_SECRET_ACCESS_KEY:}
+        from-email: ${SES_FROM_EMAIL:}
+        from-name: ${SES_FROM_NAME:Onboarder}
